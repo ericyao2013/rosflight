@@ -30,59 +30,42 @@
  */
 
 /**
- * \file mavrosflight.h
+ * \file write_buffer.h
  * \author Daniel Koch <daniel.koch@byu.edu>
  */
 
-#ifndef MAVROSFLIGHT_MAVROSFLIGHT_H
-#define MAVROSFLIGHT_MAVROSFLIGHT_H
+#ifndef MAVROSFLIGHT_WRITE_BUFFER_H
+#define MAVROSFLIGHT_WRITE_BUFFER_H
 
 #include <rosflight/mavrosflight/mavlink_bridge.h>
-#include <rosflight/mavrosflight/mavlink_comm.h>
-#include <rosflight/mavrosflight/param_manager.h>
-#include <rosflight/mavrosflight/time_manager.h>
-
-#include <rosflight/mavrosflight/mavlink_listener_interface.h>
-#include <rosflight/mavrosflight/param_listener_interface.h>
-
-#include <rosflight/mavrosflight/sensors/imu.h>
-
-#include <boost/function.hpp>
 
 #include <stdint.h>
-#include <string>
 
 namespace mavrosflight
 {
 
-class MavROSflight
+/**
+ * \brief Struct for buffering the contents of a mavlink message
+ */
+struct WriteBuffer
 {
-public:
+  uint8_t data[MAVLINK_MAX_PACKET_LEN];
+  size_t len;
+  size_t pos;
 
-  /**
-   * \brief Instantiates the class and begins communication on the specified serial port
-   * \param mavlink_comm Reference to a MavlinkComm object (serial or UDP)
-   * \param baud_rate Serial communication baud rate
-   */
-  MavROSflight(MavlinkComm& mavlink_comm, uint8_t sysid = 1, uint8_t compid = 50);
+  WriteBuffer() : len(0), pos(0) {}
 
-  /**
-   * \brief Stops communication and closes the serial port before the object is destroyed
-   */
-  ~MavROSflight();
+  WriteBuffer(const uint8_t * buf, uint16_t len) : len(len), pos(0)
+  {
+    assert(len <= MAVLINK_MAX_PACKET_LEN); //! \todo Do something less catastrophic here
+    memcpy(data, buf, len);
+  }
 
-  // public member objects
-  MavlinkComm& comm;
-  ParamManager param;
-  TimeManager time;
+  uint8_t * dpos() { return data + pos; }
 
-private:
-
-  // member variables
-  uint8_t sysid_;
-  uint8_t compid_;
+  size_t nbytes() { return len - pos; }
 };
 
 } // namespace mavrosflight
 
-#endif // MAVROSFLIGHT_MAVROSFLIGHT_H
+#endif // MAVROSFLIGHT_WRITE_BUFFER_H
